@@ -1,5 +1,24 @@
 import os
 import subprocess
+from google.genai import types
+
+schema_run_python_file = types.FunctionDeclaration(
+    name="run_python_file",
+    description="Run python file in a specified working directory",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="file path to execute file, relative to the working directory",
+            ),
+            "args": types.Schema(
+                type=types.Type.STRING,
+                description="Arguments to run with file, (default is None)",
+            )
+        },
+    ),
+)
 
 def run_python_file(working_directory, file_path, args=None):
   try:
@@ -17,18 +36,20 @@ def run_python_file(working_directory, file_path, args=None):
     command = ['python', abs_file_path]
     if args:
       command.extend(args)
-
-    output = ""
-    result = subprocess.run(command, capture_output=True, text=True, timeout=30)
+    
+    result = subprocess.run(command, cwd=working_dir_abs, capture_output=True, text=True, timeout=30)
+    output = []
     if result.returncode != 0:
-      output += f"Process exited with code {result.returncode}\n"
-    if result.stderr or not result.stdout:
-      output += "No output produced\n"
-    else:
-      output += "STDOUT: " + result.stdout
-      output += "STDERR: " + result.stderr
-    return output
+        output.append(f"Process exited with code {result.returncode}")
+    if not result.stdout and not result.stderr:
+        output.append("No output produced")
+    if result.stdout:
+        output.append(f"STDOUT:\n{result.stdout}")
+    if result.stderr:
+        output.append(f"STDERR:\n{result.stderr}")
+    return "\n".join(output)
 
   except Exception as e:
     return f"Error executing Python file: {e}"
-  
+
+print(run_python_file("./calculator", "tests.py"))
