@@ -17,6 +17,7 @@ def main():
     parser = argparse.ArgumentParser(description="Chatbot")
     parser.add_argument("user_prompt", type=str, help="User prompt")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument("--workdir", default=".", help="Working directory")
     args = parser.parse_args()
 
     messages = [types.Content(role="user", parts=[types.Part(text=args.user_prompt)])]
@@ -25,7 +26,7 @@ def main():
         print(f"User prompt: {args.user_prompt}\n")
     for _ in range(MAX_ITERS):
         try:
-            final_response = generate_content(client, messages, args.verbose)
+            final_response = generate_content(args.workdir, client, messages, args.verbose)
             if final_response:
                 print("Final response:")
                 print(final_response)
@@ -36,7 +37,7 @@ def main():
     print(f"Maximum iterations ({MAX_ITERS}) reached")
     sys.exit(1)
 
-def generate_content(client, messages, verbose):
+def generate_content(working_dir, client, messages, verbose):
     response = client.models.generate_content(
         model='gemini-2.5-flash', 
         contents=messages, 
@@ -59,7 +60,7 @@ def generate_content(client, messages, verbose):
 
     function_results = []
     for function_call in response.function_calls:
-        function_call_result = call_function(function_call)
+        function_call_result = call_function(function_call, working_dir, verbose)
         if (not function_call_result.parts 
             or not function_call_result.parts[0].function_response
             or not function_call_result.parts[0].function_response.response

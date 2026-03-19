@@ -51,5 +51,4 @@ def run_python_file(working_directory, file_path, args=None):
 
   except Exception as e:
     return f"Error executing Python file: {e}"
-
-print(run_python_file("./calculator", "tests.py"))
+    
